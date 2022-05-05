@@ -91,7 +91,7 @@ void engine::createWindowAndContext() {
 
 	// create the image textures
 	glGenTextures( 1, &displayTexture );
-	glActiveTexture( GL_TEXTURE0 );
+	glActiveTexture( GL_TEXTURE3 );
 	glBindTexture( GL_TEXTURE_2D, displayTexture );
 
 	// texture parameters
@@ -102,10 +102,18 @@ void engine::createWindowAndContext() {
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 
 	// buffer the image data to the GPU
-	glActiveTexture( GL_TEXTURE0 );
+	glActiveTexture( GL_TEXTURE3 );
 	glBindTexture( GL_TEXTURE_2D, displayTexture );
 	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8, WIDTH, HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, &imageData[ 0 ] );
-	glBindImageTexture( 0, displayTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI );
+	glBindImageTexture( 3, displayTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI );
+
+	// initial point data
+	std::vector< GLfloat > initialPointData;
+	initialPointData.resize( numPoints * 3 /* vec3 */ * 2 /* two per point */ );
+	glGenBuffers( 1, &pointSSBO );
+	glBindBuffer( GL_SHADER_STORAGE_BUFFER, pointSSBO );
+	glBufferData( GL_SHADER_STORAGE_BUFFER, sizeof( GLfloat ) * 3 * 2 * numPoints, ( GLvoid* ) &initialPointData[ 0 ],  GL_DYNAMIC_COPY );
+	glBindBufferBase( GL_SHADER_STORAGE_BUFFER, 0, pointSSBO );
 
 	// atomic writes must take place in R32I or R32UI textures - single channel 32 bit int or uint - null initailze for zeros
 	glGenTextures( 2, &pointWriteBuffers[ 0 ] );
@@ -119,12 +127,11 @@ void engine::createWindowAndContext() {
 	glTexImage2D( GL_TEXTURE_2D, 0, GL_R32UI, pointFieldSize, pointFieldSize, 0,  GL_RED_INTEGER, GL_UNSIGNED_INT, NULL );
 	glBindImageTexture( 2, pointWriteBuffers[ 1 ], 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI );
 
-	std::vector< GLfloat > initialPointData;
-	initialPointData.resize( numPoints * 3 /* vec3 */ * 2 /* two per point */ );
-	glGenBuffers( 1, &pointSSBO );
-	glBindBuffer( GL_SHADER_STORAGE_BUFFER, pointSSBO );
-	glBufferData( GL_SHADER_STORAGE_BUFFER, sizeof( GLfloat ) * 3 * 2 * numPoints, ( GLvoid* ) &initialPointData[ 0 ],  GL_DYNAMIC_COPY );
-	glBindBufferBase( GL_SHADER_STORAGE_BUFFER, 0, pointSSBO );
+	// current buffer binding point breakdown:
+		// 0 is the point data storage
+		// 1 is first pointWriteBuffer
+		// 2 is second pointWriteBuffer
+		// 3 is the displayTexture
 }
 
 void engine::computeShaderCompile() {
