@@ -109,13 +109,24 @@ void engine::createWindowAndContext() {
 
 	// initial point data
 	std::vector< GLfloat > initialPointData;
-	initialPointData.resize( numPoints * 3 /* vec3 */ * 2 /* two per point */ );
+	std::uniform_real_distribution<float> dist3( -1.0, 1.0 );
+	for ( int i = 0; i < numPoints * 3 /* vec3 */ * 2 /* two per point */; i += 6 ) {
+		initialPointData.push_back( dist3( gen ) );	// random position
+		initialPointData.push_back( dist3( gen ) );
+		initialPointData.push_back( dist3( gen ) );
+		initialPointData.push_back( 0.0f );					// zero velocity
+		initialPointData.push_back( 0.0f );
+		initialPointData.push_back( 0.0f );
+	}
+
 	glGenBuffers( 1, &pointSSBO );
 	glBindBuffer( GL_SHADER_STORAGE_BUFFER, pointSSBO );
 	glBufferData( GL_SHADER_STORAGE_BUFFER, sizeof( GLfloat ) * 3 * 2 * numPoints, ( GLvoid* ) &initialPointData[ 0 ],  GL_DYNAMIC_COPY );
 	glBindBufferBase( GL_SHADER_STORAGE_BUFFER, 0, pointSSBO );
 
 	// atomic writes must take place in R32I or R32UI textures - single channel 32 bit int or uint - null initailze for zeros
+	std::vector< GLuint > initialPointFieldData;
+
 	glGenTextures( 2, &pointWriteBuffers[ 0 ] );
 	glActiveTexture( GL_TEXTURE1 );
 	glBindTexture( GL_TEXTURE_2D, pointWriteBuffers[ 0 ] );

@@ -6,22 +6,22 @@ layout( binding = 2, r32ui ) uniform uimage2D previous;
 precision highp int;	// g might overflow? not sure if this fixes that
 // also 32 bits gives you some significant headroom
 
-uniform float decay_factor; // tbd, maybe constant
+uniform float decay_factor; // tbd, maybe constant, as below
 
 void main() {
 	ivec2 pos = ivec2( gl_GlobalInvocationID.xy );
 
 	// shitty lil gaussian kernel - just want something to diffuse outwards
-	uint g = (
-		1 * imageLoad( previous, pos + ivec2( -1, -1 ) ).r +
-		1 * imageLoad( previous, pos + ivec2( -1,  1 ) ).r +
-		1 * imageLoad( previous, pos + ivec2(  1, -1 ) ).r +
-		1 * imageLoad( previous, pos + ivec2(  1,  1 ) ).r +
-		2 * imageLoad( previous, pos + ivec2(  0,  1 ) ).r +
-		2 * imageLoad( previous, pos + ivec2(  0, -1 ) ).r +
-		2 * imageLoad( previous, pos + ivec2(  1,  0 ) ).r +
-		2 * imageLoad( previous, pos + ivec2( -1,  0 ) ).r +
-		4 * imageLoad( previous, pos + ivec2(  0,  0 ) ).r ) / 16;
+	float g = (
+		1.0 * imageLoad( previous, pos + ivec2( -1, -1 ) ).r +
+		1.0 * imageLoad( previous, pos + ivec2( -1,  1 ) ).r +
+		1.0 * imageLoad( previous, pos + ivec2(  1, -1 ) ).r +
+		1.0 * imageLoad( previous, pos + ivec2(  1,  1 ) ).r +
+		2.0 * imageLoad( previous, pos + ivec2(  0,  1 ) ).r +
+		2.0 * imageLoad( previous, pos + ivec2(  0, -1 ) ).r +
+		2.0 * imageLoad( previous, pos + ivec2(  1,  0 ) ).r +
+		2.0 * imageLoad( previous, pos + ivec2( -1,  0 ) ).r +
+		4.0 * imageLoad( previous, pos + ivec2(  0,  0 ) ).r ) / 16.0;
 
-	imageStore( current, pos, uvec4( uint( decay_factor * g ) ) );
+	imageStore( current, pos, uvec4( uint( 0.99 * g ) ) );
 }

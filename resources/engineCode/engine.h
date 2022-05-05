@@ -25,7 +25,7 @@ private:
 
 
 	//points participating in the sim - sizes the dispatch + SSBO
-	int numPoints 			= 1000;
+	int numPoints 			= 10000 * 64;
 	int pointFieldSize 	= 1000;
 
 	// SSBO to hold point locations
@@ -50,6 +50,7 @@ private:
 
 	// main loop functions
 	void mainDisplay();
+	void computePasses();
 	void handleEvents();
 	void clear();
 	void imguiPass();

@@ -3,6 +3,7 @@
 bool engine::mainLoop() {
 	// compute passes here
 		// invoke any shaders you want to use to do work on the GPU
+	computePasses();
 
 	// clear the screen and depth buffer
 	clear();
@@ -21,6 +22,23 @@ bool engine::mainLoop() {
 
 	// break main loop when pQuit turns true
 	return pQuit;
+}
+
+void engine::computePasses(){
+	//swap the images
+	std::swap( pointWriteBuffers[ 0 ], pointWriteBuffers[ 1 ]);
+	glBindImageTexture( 1, pointWriteBuffers[ 0 ], 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI );
+	glBindImageTexture( 2, pointWriteBuffers[ 1 ], 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI );
+
+	// blur the buffer
+	glUseProgram( blurShader );
+	glDispatchCompute( pointFieldSize / 8, pointFieldSize / 8, 1 );
+	glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
+
+	// new point writes
+	glUseProgram( pointHandlerShader );
+	glDispatchCompute( numPoints / 64, 1, 1 );
+	glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
 }
 
 void engine::clear() {
