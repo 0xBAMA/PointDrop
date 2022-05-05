@@ -106,10 +106,33 @@ void engine::createWindowAndContext() {
 	glBindTexture( GL_TEXTURE_2D, displayTexture );
 	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8, WIDTH, HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, &imageData[ 0 ] );
 	glBindImageTexture( 0, displayTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI );
+
+	// atomic writes must take place in R32I or R32UI textures - single channel 32 bit int or uint - null initailze for zeros
+	glGenTextures( 2, &pointWriteBuffers[ 0 ] );
+	glActiveTexture( GL_TEXTURE1 );
+	glBindTexture( GL_TEXTURE_2D, pointWriteBuffers[ 0 ] );
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_R32UI, pointFieldSize, pointFieldSize, 0,  GL_RED_INTEGER, GL_UNSIGNED_INT, NULL );
+	glBindImageTexture( 1, pointWriteBuffers[ 0 ], 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI );
+
+	glActiveTexture( GL_TEXTURE2 );
+	glBindTexture( GL_TEXTURE_2D, pointWriteBuffers[ 1 ] );
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_R32UI, pointFieldSize, pointFieldSize, 0,  GL_RED_INTEGER, GL_UNSIGNED_INT, NULL );
+	glBindImageTexture( 2, pointWriteBuffers[ 1 ], 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI );
+
+	std::vector< GLfloat > initialPointData;
+	initialPointData.resize( numPoints * 3 /* vec3 */ * 2 /* two per point */ );
+	glGenBuffers( 1, &pointSSBO );
+	glBindBuffer( GL_SHADER_STORAGE_BUFFER, pointSSBO );
+	glBufferData( GL_SHADER_STORAGE_BUFFER, sizeof( GLfloat ) * 3 * 2 * numPoints, ( GLvoid* ) &initialPointData[ 0 ],  GL_DYNAMIC_COPY );
+	glBindBufferBase( GL_SHADER_STORAGE_BUFFER, 0, pointSSBO );
 }
 
 void engine::computeShaderCompile() {
-	// compile any compute shaders here, store handles in engine class member function variables
+	// one for point operation
+	pointHandlerShader = CShader( "resources/engineCode/shaders/point.cs.glsl" ).Program;
+	// one for blur
+	blurShader = CShader( "resources/engineCode/shaders/blur.cs.glsl" ).Program;
+	// and in the darkness bind them
 }
 
 

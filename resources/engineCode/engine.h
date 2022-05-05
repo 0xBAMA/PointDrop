@@ -23,6 +23,23 @@ private:
 	GLuint displayShader;
 	GLuint displayVAO;
 
+
+	//points participating in the sim - sizes the dispatch + SSBO
+	int numPoints 			= 1000;
+	int pointFieldSize 	= 1000;
+
+	// SSBO to hold point locations
+	GLuint pointSSBO;
+	// image buffer for atomic writes - blur between updates???? FUCK YES
+	GLuint pointWriteBuffers[ 2 ]; // ping pong pair - for color we need one per channel
+
+	// shader to handle the point action - vertex or compute, what makes more sense?
+	GLuint pointHandlerShader;
+	// shader to progressively blur the buffer result
+	// -> skip the main loop swap for non-progressive ( single blur pass per invocation )
+	GLuint blurShader;
+
+
 	// initialization
 	void init();
 	void startMessage();
