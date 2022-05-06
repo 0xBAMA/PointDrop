@@ -25,6 +25,17 @@ bool engine::mainLoop() {
 }
 
 void engine::computePasses(){
+	static float timer = 0.0;
+	timer += 0.001;
+
+
+	// new point writes
+	glUseProgram( pointHandlerShader );
+	glUniform2i( glGetUniformLocation( pointHandlerShader, "computeDimensions" ), computeDimensions.x, computeDimensions.y );
+	glUniform1f( glGetUniformLocation( pointHandlerShader, "time" ), timer );
+	glDispatchCompute( computeDimensions.x / 16, computeDimensions.y / 16, 1 );
+	glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
+
 	//swap the images
 	std::swap( pointWriteBuffers[ 0 ], pointWriteBuffers[ 1 ]);
 	glBindImageTexture( 1, pointWriteBuffers[ 0 ], 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI );
@@ -33,11 +44,6 @@ void engine::computePasses(){
 	// blur the buffer
 	glUseProgram( blurShader );
 	glDispatchCompute( pointFieldSize / 8, pointFieldSize / 8, 1 );
-	glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
-
-	// new point writes
-	glUseProgram( pointHandlerShader );
-	glDispatchCompute( numPoints / 64, 1, 1 );
 	glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
 }
 
@@ -61,7 +67,7 @@ void engine::imguiPass() {
 	imguiFrameStart();
 
 	// show the demo window
-	static bool showDemoWindow = true;
+	static bool showDemoWindow = !true;
 	if ( showDemoWindow )
 		ImGui::ShowDemoWindow( &showDemoWindow );
 
@@ -90,5 +96,8 @@ void engine::handleEvents() {
 
 		if ( event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_ESCAPE && SDL_GetModState() & KMOD_SHIFT )
 			pQuit = true; // force quit on shift+esc ( bypasses confirm window )
+
+		if ( event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_SPACE )
+			sendRandomPointData(); // reinit SSBO
 	}
 }

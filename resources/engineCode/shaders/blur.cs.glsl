@@ -23,5 +23,5 @@ void main() {
 		2.0 * imageLoad( previous, pos + ivec2( -1,  0 ) ).r +
 		4.0 * imageLoad( previous, pos + ivec2(  0,  0 ) ).r ) / 16.0;
 
-	imageStore( current, pos, uvec4( uint( 0.99 * g ) ) );
+	imageStore( current, pos, uvec4( uint( 0.95 * g ) ) );
 }

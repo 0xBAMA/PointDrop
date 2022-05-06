@@ -32,7 +32,7 @@ void engine::createWindowAndContext() {
 	cout << T_BLUE << "    Creating window" << RESET << " .................................. ";
 	// auto flags = SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN | SDL_WINDOW_BORDERLESS;
 	auto flags = SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN | SDL_WINDOW_RESIZABLE;
-	window = SDL_CreateWindow( "NQADE", 0, 0, dm.w, dm.h, flags );
+	window = SDL_CreateWindow( "PointDrop", 0, 0, pointFieldSize, pointFieldSize, flags );
 
 	// if init takes some time, don't show the window before it's done
 	SDL_ShowWindow( window );
@@ -108,24 +108,11 @@ void engine::createWindowAndContext() {
 	glBindImageTexture( 3, displayTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI );
 
 	// initial point data
-	std::vector< GLfloat > initialPointData;
-	std::uniform_real_distribution<float> dist3( -1.0, 1.0 );
-	for ( int i = 0; i < numPoints * 3 /* vec3 */ * 2 /* two per point */; i += 6 ) {
-		initialPointData.push_back( dist3( gen ) );	// random position
-		initialPointData.push_back( dist3( gen ) );
-		initialPointData.push_back( dist3( gen ) );
-		initialPointData.push_back( 0.0f );					// zero velocity
-		initialPointData.push_back( 0.0f );
-		initialPointData.push_back( 0.0f );
-	}
-
 	glGenBuffers( 1, &pointSSBO );
-	glBindBuffer( GL_SHADER_STORAGE_BUFFER, pointSSBO );
-	glBufferData( GL_SHADER_STORAGE_BUFFER, sizeof( GLfloat ) * 3 * 2 * numPoints, ( GLvoid* ) &initialPointData[ 0 ],  GL_DYNAMIC_COPY );
-	glBindBufferBase( GL_SHADER_STORAGE_BUFFER, 0, pointSSBO );
+	sendRandomPointData();
 
 	// atomic writes must take place in R32I or R32UI textures - single channel 32 bit int or uint - null initailze for zeros
-	std::vector< GLuint > initialPointFieldData;
+	// std::vector< GLuint > initialPointFieldData;
 
 	glGenTextures( 2, &pointWriteBuffers[ 0 ] );
 	glActiveTexture( GL_TEXTURE1 );
@@ -143,6 +130,29 @@ void engine::createWindowAndContext() {
 		// 1 is first pointWriteBuffer
 		// 2 is second pointWriteBuffer
 		// 3 is the displayTexture
+}
+
+void engine::sendRandomPointData(){
+	std::vector< GLfloat > randomPointData;
+	std::default_random_engine gen;
+	std::uniform_real_distribution<float> dist3( -1.0, 1.0 );
+	for ( int i = 0; i < numPoints; i += 1 ) {
+		randomPointData.push_back( dist3( gen ) );	// random position
+		randomPointData.push_back( dist3( gen ) );
+		randomPointData.push_back( dist3( gen ) );
+		randomPointData.push_back( 0.0 ); // 16-bit alignment padding
+
+
+		glm::vec3 direction = glm::normalize( glm::vec3( dist3( gen ), dist3( gen ), dist3( gen ) ) );
+		randomPointData.push_back( direction.x );
+		randomPointData.push_back( direction.y );
+		randomPointData.push_back( direction.z );
+		randomPointData.push_back( 0.0 );
+	}
+
+	glBindBuffer( GL_SHADER_STORAGE_BUFFER, pointSSBO );
+	glBufferData( GL_SHADER_STORAGE_BUFFER, sizeof( GLfloat ) * 3 * 2 * numPoints, ( GLvoid* ) &randomPointData[ 0 ],  GL_DYNAMIC_COPY );
+	glBindBufferBase( GL_SHADER_STORAGE_BUFFER, 0, pointSSBO );
 }
 
 void engine::computeShaderCompile() {

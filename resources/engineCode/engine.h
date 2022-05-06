@@ -25,8 +25,9 @@ private:
 
 
 	//points participating in the sim - sizes the dispatch + SSBO
-	int numPoints 			= 10000 * 64;
-	int pointFieldSize 	= 1000;
+	const glm::ivec2 computeDimensions = glm::ivec2( 3000, 3000 );
+	const int numPoints 			= computeDimensions.x * computeDimensions.y;
+	const int pointFieldSize 	= 1000;
 
 	// SSBO to hold point locations
 	GLuint pointSSBO;
@@ -45,6 +46,7 @@ private:
 	void startMessage();
 	void createWindowAndContext();
 	void displaySetup();
+	void sendRandomPointData();
 	void computeShaderCompile();
 	void imguiSetup();
 
